@@ -23,6 +23,9 @@
     <ClInclude Include="StdAfx.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="octree.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\gaojijian.jpg">
@@ -31,6 +34,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="octree.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
