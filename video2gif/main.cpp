@@ -23,16 +23,16 @@ int main(int argc, char * argv[]) {
 	cvSetCaptureProperty(cap, CV_CAP_PROP_POS_MSEC, 40 * 60 * 1000);
 	IplImage* img = cvQueryFrame(cap);
 	IplImage* buf = cvCreateImage(cvGetSize(img), img->depth, img->nChannels);
-	//cvCvtColor(img, buf, COLOR_BGR2Lab);
 	Octree oct(img);
 	//oct.test();
 	oct.qunatization(img, buf);
-	//cvCvtColor(img, buf, COLOR_Lab2BGR);
 
 	cvNamedWindow("result");
-	cvShowImage("result", buf);
+	cvShowImage("result", img);
+	cvNamedWindow("result2");
+	cvShowImage("result2", buf);
 	cvWaitKey(0);
-	cvDestroyWindow("result");
+	cvDestroyAllWindows();
 
 	return 0;
 }

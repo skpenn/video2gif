@@ -35,6 +35,7 @@ public:
 class Octree {
 	IplImage* InitImg;
 	static const uchar mask[8];
+	static const uchar mask2[8];
 	list<Node*>* Levels = new list<Node*>[9];
 	int leaflevel = 8;
 	Node* insert(Node* pNode, const Color& c);

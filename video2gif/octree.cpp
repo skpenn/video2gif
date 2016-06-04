@@ -29,6 +29,7 @@ bool less_than(Node* a, Node* b) {
 
 
 const uchar Octree::mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+const uchar Octree::mask2[8] = { 0x00, 0x01, 0x02, 0x04, 0x03, 0x05, 0x06, 0x07 };
 
 Octree::Octree() {};
 Octree::Octree(IplImage* img) {
@@ -125,8 +126,15 @@ void Octree::reduce() {
 void Octree::init(IplImage* img) {
 	int lev = 0;
 	InitImg = img;
-	Node* root = new Node(0);
-	Levels[lev].push_back(root);
+	Node* root;
+	if (Levels[0].size() == 0) {
+		root = new Node(0);
+		Levels[lev].push_back(root);
+	}
+	else
+	{
+		root = *Levels[0].begin();
+	}
 
 	//Generate Octree
 	for (int i = 0; i < img->height; i++) {
@@ -148,25 +156,17 @@ void Octree::qunatization(IplImage* src, IplImage* dst) {
 			Color c(*pt, *(pt + 1), *(pt + 2));
 			Node* p = *Levels[0].begin();
 			int lev = 0;
-			for (; lev < leaflevel-1; lev++) {
+			for (; lev < leaflevel; lev++) {
 				int index = ((c.v2&mask[lev]) >> (7 - lev) << 2) + ((c.v1&mask[lev]) >> (7 - lev) << 1) + ((c.v2&mask[lev]) >> (7 - lev));
+				int t = index;
+				for (int l = 0; l < 8 && p->children[index] == NULL; l++)index = t^mask2[l];
 				p = p->children[index];
 				if (p == NULL) {
 					cout << "Error: at level of " << lev << endl;
 					exit(2);
 				}
 			}
-			int index = ((c.v2&mask[lev]) >> (7 - lev) << 2) + ((c.v1&mask[lev]) >> (7 - lev) << 1) + ((c.v2&mask[lev]) >> (7 - lev));
-			if (p->children[index] != NULL)p = p->children[index];
-			else {
-				int k = 0;
-				for (; k < 8 && p->children[k] == NULL; k++);
-				if (k == 8) {
-					cout << "Error: at final level" << endl;
-					exit(2);
-				}
-				p = p->children[k];
-			}
+			
 			pt = (uchar*)(dst->imageData + i*dst->widthStep + j*dst->nChannels);
 			*pt = p->c.v0;
 			*(pt + 1) = p->c.v1;
