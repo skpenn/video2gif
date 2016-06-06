@@ -68,8 +68,11 @@ class gif {
 	void writeImgDesp();
 	void writeGraphCtrl();
 	int lzw_encode(IplImage* img);
+	void diffBuf(IplImage* old, IplImage* ne);
 	void writeDate(int size);
 	IplImage* getNextFrame();
+
+	void display(IplImage* img);
 public:
 	unsigned int IndSize = 8;
 	bool version=GIF_89A;
@@ -80,6 +83,7 @@ public:
 	bool speedup = false;
 	int speed = 1;
 	int frames=1;
+	bool IsKeyFrame = false;
 	Octree* octree;
 	bool FullQuant=false;
 	uchar* charbuf;

@@ -10,10 +10,10 @@ int gif::lzw_encode(IplImage* img) {
 	for(int i=0;i<img->height;i++)
 		for (int j = 0; j < img->width; j++) {
 			if ((i | j) == 0) {
-				ne= (img->imageData + i*img->widthStep)[j*img->nChannels];
+				ne = ((uchar*)(img->imageData + i*img->widthStep))[j*img->nChannels];
 				continue;
 			}
-			t = (img->imageData + i*img->widthStep)[j*img->nChannels];
+			t = ((uchar*)(img->imageData + i*img->widthStep))[j*img->nChannels];
 			int tmp = (ne << IndSize) | t;
 			int in = tab[tmp];
 			if (in != 0) {
@@ -29,9 +29,9 @@ int gif::lzw_encode(IplImage* img) {
 				label -= 8;
 			}
 			index++;
-			if (index >= (1 << length) ){
+			if (index >= (1 << length)) {
 				if (length >= 12) {
-					local |= (1<< IndSize) << label;
+					local |= (1 << IndSize) << label;
 					label += length;
 					while (label >= 8) {
 						charbuf[size++] = local & 0xff;
@@ -42,20 +42,54 @@ int gif::lzw_encode(IplImage* img) {
 					index = (1 << (length - 1)) + 2;
 					tab.clear();
 				}
-				else if (index >= (1 <<length)+1) {
+				else if (index >= (1 << length) + 1) {
 					length++;
 				}
 			}
 			ne = t;
 		}
-		local |= (ne) << label;
-		label += length;
-		while (label > 0) {
-			charbuf[size++] = local & 0xff;
-			local >>= 8;
-			label -= 8;
+
+	local |= (ne) << label;
+	label += length;
+	while (label >=0) {
+		charbuf[size++] = local & 0xff;
+		local >>= 8;
+		label -= 8;
+	}
+	return size;
+}
+
+void gif::diffBuf(IplImage* old, IplImage* ne) {
+	unsigned short maxw, minw, maxh, minh;
+	maxw = minw = width / 2;
+	maxh = minh = height / 2;
+	for(int i=0;i<height;i++)
+		for (int j = 0; j < width; j++) {
+			uchar* pold = (uchar*)(old->imageData + i*width + j);
+			uchar* pnew = (uchar*)(ne->imageData + i*width + j);
+			if (*pold == *pnew) {
+				*pnew = Graph->transp_index;
+			}
+			else {
+				if (!IsKeyFrame) {
+					*pold = *pnew;
+				}
+				if (i > maxh)maxh = i;
+				if (i < minh)minh = i;
+				if (j > maxw)maxw = j;
+				if (j < minw)minw = j;
+			}
 		}
-		return size;
+	im->top = minh;
+	im->left = minw;
+	im->height = maxh + 1 - minh;
+	im->width = maxw + 1 - minw;
+	if (IsKeyFrame) {
+		Graph->disp_meth = DSP_RST_PREV;
+	}
+	else {
+		Graph->disp_meth = DSP_NO_ACT;
+	}
 }
 
 IplImage* gif::getNextFrame() {
@@ -66,6 +100,31 @@ IplImage* gif::getNextFrame() {
 	return cvQueryFrame(Cap);
 }
 
+void gif::display(IplImage* img) {
+	cvNamedWindow("display");
+	static Color* table = new Color[256];
+	list<Node*>::iterator it = GlobalTab->begin();
+	int i = 0;
+	for (i = 0; it != GlobalTab->end(); i++, it++) {
+		table[i] = (*it)->c;
+	}
+	while (i < 256) {
+		table[i++] = Color(255, 255, 255);
+	}
+	IplImage* tmp = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
+	for(i=0;i<img->height;i++)
+		for (int j = 0; j < img->width; j++) {
+			Color c = table[((uchar*)(img->imageData + i*img->widthStep))[j*img->nChannels]];
+			((uchar*)(tmp->imageData + i*tmp->widthStep))[j*tmp->nChannels + 0] = c.v0;
+			((uchar*)(tmp->imageData + i*tmp->widthStep))[j*tmp->nChannels + 1] = c.v1;
+			((uchar*)(tmp->imageData + i*tmp->widthStep))[j*tmp->nChannels + 2] = c.v2;
+		}
+	cvShowImage("display", tmp);
+	cvWaitKey(0);
+	cvDestroyWindow("display");
+	cvReleaseImage(&tmp);
+}
+
 gif::gif(IplImage* img) {
 	InitImg = img;
 }
@@ -73,30 +132,16 @@ gif::gif(IplImage* img) {
 gif::gif(CvCapture* cap) {
 	InitImg = cvQueryFrame(cap);
 	float Frames = cvGetCaptureProperty(cap, CV_CAP_PROP_FRAME_COUNT);
-	if (Frames > 2) {
-		cvSetCaptureProperty(cap, CV_CAP_PROP_POS_FRAMES, Frames-1);
-		buf2 = cvQueryFrame(cap);
-		if (buf2 == NULL) {
-			cout << "Warning: final frame not find" << endl;
-			frames = 1;
-		}
-		else {
-			frames = 2;
-		}
-	}
-	if (Frames > 3 && frames > 1) {
-		cvSetCaptureProperty(cap, CV_CAP_PROP_POS_FRAMES, int(Frames /2));
-		buf3 = cvQueryFrame(cap);
-		frames = 3;
-	}
+	frames = (int)Frames;
 	Cap = cap;
-	cvSetCaptureProperty(Cap, CV_CAP_PROP_POS_FRAMES, 0);
+	IsVideo = true;
 }
 
 
 void gif::init() {
 	im = new Image_info();
 	Graph = new Graph_ctrl();
+
 	if (!rescale) {
 		width = InitImg->width;
 		height = InitImg->height;
@@ -106,25 +151,34 @@ void gif::init() {
 		cvResize(InitImg, buf);
 		InitImg = buf;
 	}
-	if(frames>1){
-		CapFps = cvGetCaptureProperty(Cap, CV_CAP_PROP_FPS);
-		RealDelay = 4 / CapFps;
-		NowTime = 0;
-		Graph->delay = (unsigned short)(RealDelay * 100);
-	}
+	
 	charbuf = new uchar[width*height + ((width*height) >> 1)];
 	octree = new Octree();
 	octree->init(InitImg);
 	octree->test();
-	if (!FullQuant) {
+	if (IsVideo) {
 		if (frames > 1) {
-			octree->init(buf2);
-			octree->test();
+			CapFps = cvGetCaptureProperty(Cap, CV_CAP_PROP_FPS);
+			RealDelay = 4 / CapFps;
+			NowTime = 0;
+			Graph->delay = (unsigned short)(RealDelay * 100);
 		}
-		if (frames > 2) {
-			octree->init(buf3);
-			octree->test();
+		if (!FullQuant) {
+			if (frames > 1) {
+				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, frames - 1);
+				InitImg = cvQueryFrame(Cap);
+				octree->init(InitImg);
+				octree->test();
+			}
+			if (frames > 2) {
+				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, frames/2);
+				InitImg = cvQueryFrame(Cap);
+				octree->init(InitImg);
+				octree->test();
+			}
 		}
+		cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, 0);
+		InitImg = cvQueryFrame(Cap);
 	}
 	octree->reduce();
 	octree->test();
@@ -153,19 +207,30 @@ void gif::saveFile(String filename) {
 	im->top = im->left = 0;
 	im->width = width;
 	im->height = height;
-	writeGraphCtrl();
+	//writeGraphCtrl();
 	writeImgDesp();
 	int size = lzw_encode(buf);
 	tch = IndSize;
 	fout.write((char*)(&tch), 1);
+	//display(buf);
 	writeDate(size);
+	Graph->disp_meth = DSP_RST_PREV;
 	if (frames > 1) {
 		buf2 = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1);
 		while ((tmp = getNextFrame()) != NULL) {
 			octree->qunatizationIndex(tmp, buf2);
+			diffBuf(buf, buf2);
+			//display(buf2);
+			if (buf3 != NULL) {
+				cvReleaseImage(&buf3);
+			}
+			buf3 = cvCreateImage(CvSize(im->width, im->height), IPL_DEPTH_8U, 1);
+			cvSetImageROI(buf2, CvRect(im->left, im->top, im->width, im->height));
+			cvCopy(buf2, buf3, 0);
+			cvResetImageROI(buf2);
 			writeGraphCtrl();
 			writeImgDesp();
-			size = lzw_encode(buf2);
+			size = lzw_encode(buf3);
 			tch = IndSize;
 			fout.write((char*)(&tch), 1);
 			writeDate(size);
@@ -242,7 +307,7 @@ void gif::writeGraphCtrl() {
 	fout.write((char*)&tch, 1);
 	tch = 0x04;
 	fout.write((char*)&tch, 1);
-	tch = (DSP_NO_ACT << 2) | 1;
+	tch = (Graph->disp_meth << 2) | 1;
 	fout.write((char*)&tch, 1);
 	fout.write((char*)&Graph->delay, 2);
 	fout.write((char*)&Graph->transp_index, 1);
