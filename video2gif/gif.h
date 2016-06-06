@@ -46,7 +46,7 @@ public:
 	uchar disp_meth=DSP_NO_ACT;
 	bool user_input=false;
 	bool transp=false;
-	unsigned char delay;
+	unsigned short delay;
 	unsigned char transp_index=0xff;
 
 };
@@ -58,17 +58,27 @@ class gif {
 	unsigned short tsh;
 	unsigned int tin;
 
+	float RealDelay;
+	int count = 0;
+	float NowTime = 0;
+	float CapFps;
+
 	void writeHead();
 	void writeColorTab();
 	void writeImgDesp();
+	void writeGraphCtrl();
 	int lzw_encode(IplImage* img);
 	void writeDate(int size);
+	IplImage* getNextFrame();
 public:
 	unsigned int IndSize = 8;
-	bool version;
+	bool version=GIF_89A;
+	bool IsVideo=false;
 	unsigned short width;
 	unsigned short height;
 	bool rescale = false;
+	bool speedup = false;
+	int speed = 1;
 	int frames=1;
 	Octree* octree;
 	bool FullQuant=false;
@@ -81,6 +91,7 @@ public:
 	IplImage* InitImg = NULL;
 	IplImage* tmp = NULL;
 	list<Node*>* GlobalTab;
+	CvCapture* Cap;
 
 	Image_info* im;
 	Graph_ctrl* Graph;

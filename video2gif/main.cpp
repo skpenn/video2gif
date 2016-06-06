@@ -17,14 +17,13 @@ IplImage* readImg(String filename) {
 	return img;
 }
 
-int main(int argc, char * argv[]) {/*
-	CvCapture* cap = readVideo("C:\\kankan\\Zootopia.2016.720p.BluRay.x264-SPARKS.mkv");
+int main(int argc, char * argv[]) {
+	CvCapture* cap = readVideo("C:\\kankan\\test4.mkv");
 	if (!cap)return 0;
-	cvSetCaptureProperty(cap, CV_CAP_PROP_POS_MSEC, 40 * 60 * 1000);*/
-	IplImage* img = readImg("../gaojijian.jpg");
-	gif* g = new gif(img);
+	//IplImage* img = readImg("../gaojijian.jpg");
+	gif* g = new gif(cap);
 	g->init();
-	g->saveFile("test2.gif");
+	g->saveFile("test4.gif");
 
 	return 0;
 }

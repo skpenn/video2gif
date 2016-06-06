@@ -58,11 +58,41 @@ int gif::lzw_encode(IplImage* img) {
 		return size;
 }
 
+IplImage* gif::getNextFrame() {
+	NowTime += RealDelay;
+	while (++count < int(NowTime*CapFps)) {
+		cvQueryFrame(Cap);
+	}
+	return cvQueryFrame(Cap);
+}
+
 gif::gif(IplImage* img) {
 	InitImg = img;
 }
 
-gif::gif(CvCapture* cap) {}
+gif::gif(CvCapture* cap) {
+	InitImg = cvQueryFrame(cap);
+	float Frames = cvGetCaptureProperty(cap, CV_CAP_PROP_FRAME_COUNT);
+	if (Frames > 2) {
+		cvSetCaptureProperty(cap, CV_CAP_PROP_POS_FRAMES, Frames-1);
+		buf2 = cvQueryFrame(cap);
+		if (buf2 == NULL) {
+			cout << "Warning: final frame not find" << endl;
+			frames = 1;
+		}
+		else {
+			frames = 2;
+		}
+	}
+	if (Frames > 3 && frames > 1) {
+		cvSetCaptureProperty(cap, CV_CAP_PROP_POS_FRAMES, int(Frames /2));
+		buf3 = cvQueryFrame(cap);
+		frames = 3;
+	}
+	Cap = cap;
+	cvSetCaptureProperty(Cap, CV_CAP_PROP_POS_FRAMES, 0);
+}
+
 
 void gif::init() {
 	im = new Image_info();
@@ -76,18 +106,26 @@ void gif::init() {
 		cvResize(InitImg, buf);
 		InitImg = buf;
 	}
+	if(frames>1){
+		CapFps = cvGetCaptureProperty(Cap, CV_CAP_PROP_FPS);
+		RealDelay = 4 / CapFps;
+		NowTime = 0;
+		Graph->delay = (unsigned short)(RealDelay * 100);
+	}
 	charbuf = new uchar[width*height + ((width*height) >> 1)];
 	octree = new Octree();
 	octree->init(InitImg);
+	octree->test();
 	if (!FullQuant) {
 		if (frames > 1) {
 			octree->init(buf2);
+			octree->test();
 		}
 		if (frames > 2) {
 			octree->init(buf3);
+			octree->test();
 		}
 	}
-	octree->test();
 	octree->reduce();
 	octree->test();
 	octree->addIndex();
@@ -99,10 +137,15 @@ void gif::init() {
 		cout << "Failed to generate an octree" << endl;
 		exit(3);
 	}
+	buf = buf2 = buf3 = NULL;
 }
 
 void gif::saveFile(String filename) {
 	fout = ofstream(filename.c_str(), ios::out | ios::binary);
+	if (fout.is_open() == false) {
+		cout << "Open file failed" << endl;
+		exit(4);
+	}
 	buf = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1);
 	octree->qunatizationIndex(InitImg, buf);
 	writeHead();
@@ -110,11 +153,24 @@ void gif::saveFile(String filename) {
 	im->top = im->left = 0;
 	im->width = width;
 	im->height = height;
+	writeGraphCtrl();
 	writeImgDesp();
 	int size = lzw_encode(buf);
 	tch = IndSize;
 	fout.write((char*)(&tch), 1);
 	writeDate(size);
+	if (frames > 1) {
+		buf2 = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1);
+		while ((tmp = getNextFrame()) != NULL) {
+			octree->qunatizationIndex(tmp, buf2);
+			writeGraphCtrl();
+			writeImgDesp();
+			size = lzw_encode(buf2);
+			tch = IndSize;
+			fout.write((char*)(&tch), 1);
+			writeDate(size);
+		}
+	}
 	tch = GIF_TRAILER;
 	fout.write((char*)(&tch), 1);
 	fout.close();
@@ -176,6 +232,21 @@ void gif::writeDate(int size) {
 	fout.write((char*)&tch, 1);
 	fout.write((char*)(charbuf + ind), tch);
 	tch = 0;
+	fout.write((char*)&tch, 1);
+}
+
+void gif::writeGraphCtrl() {
+	tch = GIF_EXT_BLK;
+	fout.write((char*)&tch, 1);
+	tch = GIF_GRAPH_CTRL_EXT;
+	fout.write((char*)&tch, 1);
+	tch = 0x04;
+	fout.write((char*)&tch, 1);
+	tch = (DSP_NO_ACT << 2) | 1;
+	fout.write((char*)&tch, 1);
+	fout.write((char*)&Graph->delay, 2);
+	fout.write((char*)&Graph->transp_index, 1);
+	tch = BLK_TERM;
 	fout.write((char*)&tch, 1);
 }
 
