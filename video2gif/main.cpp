@@ -17,22 +17,14 @@ IplImage* readImg(String filename) {
 	return img;
 }
 
-int main(int argc, char * argv[]) {
+int main(int argc, char * argv[]) {/*
 	CvCapture* cap = readVideo("C:\\kankan\\Zootopia.2016.720p.BluRay.x264-SPARKS.mkv");
 	if (!cap)return 0;
-	cvSetCaptureProperty(cap, CV_CAP_PROP_POS_MSEC, 40 * 60 * 1000);
-	IplImage* img = cvQueryFrame(cap);
-	IplImage* buf = cvCreateImage(cvGetSize(img), img->depth, img->nChannels);
-	Octree oct(img);
-	//oct.test();
-	oct.qunatization(img, buf);
-
-	cvNamedWindow("result");
-	cvShowImage("result", img);
-	cvNamedWindow("result2");
-	cvShowImage("result2", buf);
-	cvWaitKey(0);
-	cvDestroyAllWindows();
+	cvSetCaptureProperty(cap, CV_CAP_PROP_POS_MSEC, 40 * 60 * 1000);*/
+	IplImage* img = readImg("../gaojijian.jpg");
+	gif* g = new gif(img);
+	g->init();
+	g->saveFile("test2.gif");
 
 	return 0;
 }

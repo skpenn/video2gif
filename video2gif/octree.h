@@ -22,6 +22,8 @@ public:
 	int freq;
 	int count;
 
+	int index;
+
 	Node* children[8];
 
 	Node();
@@ -30,6 +32,7 @@ public:
 	Node(const int& level, const Color& c);
 
 	friend bool less_than(Node* a, Node* b);
+	friend bool great_than(Node* a, Node* b);
 };
 
 class Octree {
@@ -45,7 +48,11 @@ public:
 	Octree(IplImage* InitImg);
 	void init(IplImage* InitImg);
 	void reduce();
+	void addIndex();
+	Node* find(const Color& c);
 	void qunatization(IplImage* src, IplImage* dst);
+	void qunatizationIndex(IplImage* src, IplImage* dst);
+	list<Node*>* getTable();
 	void test();
 
 	~Octree();

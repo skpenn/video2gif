@@ -146,6 +146,7 @@
     <None Include="..\.gitignore" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gif.h" />
     <ClInclude Include="octree.h" />
     <ClInclude Include="StdAfx.h" />
   </ItemGroup>
@@ -153,6 +154,7 @@
     <Image Include="..\gaojijian.jpg" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="gif.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="octree.cpp" />
   </ItemGroup>

@@ -27,6 +27,9 @@ bool less_than(Node* a, Node* b) {
 	return float(a->freq) / (a->count) < float(b->freq) / (b->count);
 }
 
+bool great_than(Node* a, Node* b) {
+	return !less_than(a, b);
+}
 
 const uchar Octree::mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 const uchar Octree::mask2[8] = { 0x00, 0x01, 0x02, 0x04, 0x03, 0x05, 0x06, 0x07 };
@@ -102,7 +105,7 @@ void Octree::reduce() {
 		}
 	}
 	Levels[t - 1].sort(less_than);
-	for (list<Node*>::iterator it = Levels[t - 1].begin(); it != Levels[t - 1].end() && Levels[t].size() > 256; it++) {
+	for (list<Node*>::iterator it = Levels[t - 1].begin(); it != Levels[t - 1].end() && Levels[t].size() > 255; it++) {
 		Node* p = *it;
 		if (p->count <= 1)continue;
 		int s0 = 0, s1 = 0, s2 = 0;
@@ -119,6 +122,15 @@ void Octree::reduce() {
 		Color c(s0 / p->freq, s1 / p->freq, s2 / p->freq);
 		p->count = 1;
 		insert(p, c);
+	}
+}
+
+void Octree::addIndex() {
+	Levels[leaflevel].sort(great_than);
+	int i = 0;
+	list<Node*>::iterator it=Levels[leaflevel].begin();
+	for (; it != Levels[leaflevel].end(); it++, i++) {
+		(*it)->index = i;
 	}
 }
 
@@ -149,30 +161,52 @@ void Octree::init(IplImage* img) {
 	}
 }
 
+Node* Octree::find(const Color& c) {
+	Node* p = *Levels[0].begin();
+	int lev = 0;
+	for (; lev < leaflevel; lev++) {
+		int index = ((c.v2&mask[lev]) >> (7 - lev) << 2) + ((c.v1&mask[lev]) >> (7 - lev) << 1) + ((c.v2&mask[lev]) >> (7 - lev));
+		int t = index;
+		for (int l = 0; l < 8 && p->children[index] == NULL; l++)index = t^mask2[l];
+		p = p->children[index];
+		if (p == NULL) {
+			cout << "Error: at level of " << lev << endl;
+			exit(2);
+		}
+	}
+	return p;
+}
+
 void Octree::qunatization(IplImage* src, IplImage* dst) {
 	for (int i = 0; i < src->height; i++) {
 		for (int j = 0; j < src->width; j++) {
 			uchar* pt = (uchar*)(src->imageData + i*src->widthStep + j*src->nChannels);
 			Color c(*pt, *(pt + 1), *(pt + 2));
-			Node* p = *Levels[0].begin();
-			int lev = 0;
-			for (; lev < leaflevel; lev++) {
-				int index = ((c.v2&mask[lev]) >> (7 - lev) << 2) + ((c.v1&mask[lev]) >> (7 - lev) << 1) + ((c.v2&mask[lev]) >> (7 - lev));
-				int t = index;
-				for (int l = 0; l < 8 && p->children[index] == NULL; l++)index = t^mask2[l];
-				p = p->children[index];
-				if (p == NULL) {
-					cout << "Error: at level of " << lev << endl;
-					exit(2);
-				}
-			}
-			
+			Node* p = find(c);
+
 			pt = (uchar*)(dst->imageData + i*dst->widthStep + j*dst->nChannels);
 			*pt = p->c.v0;
 			*(pt + 1) = p->c.v1;
 			*(pt + 2) = p->c.v2;
 		}
 	}
+}
+
+void Octree::qunatizationIndex(IplImage* src, IplImage* dst) {
+	for (int i = 0; i < src->height; i++) {
+		for (int j = 0; j < src->width; j++) {
+			uchar* pt = (uchar*)(src->imageData + i*src->widthStep + j*src->nChannels);
+			Color c(*pt, *(pt + 1), *(pt + 2));
+			Node* p = find(c);
+
+			pt = (uchar*)(dst->imageData + i*dst->widthStep + j*dst->nChannels);
+			*pt = (uchar)p->index;
+		}
+	}
+}
+
+list<Node*>* Octree::getTable() {
+	return Levels + leaflevel;
 }
 
 void Octree::test() {
