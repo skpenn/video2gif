@@ -18,12 +18,16 @@ IplImage* readImg(String filename) {
 }
 
 int main(int argc, char * argv[]) {
-	CvCapture* cap = readVideo("C:\\kankan\\test4.mkv");
+	if (argc <= 1) {
+		cout << "USAGE: video2gif filename  " << endl;
+		return 0;
+	}
+	CvCapture* cap = readVideo(argv[1]);
 	if (!cap)return 0;
 	//IplImage* img = readImg("../gaojijian.jpg");
 	gif* g = new gif(cap);
 	g->init();
-	g->saveFile("test4.gif");
+	g->saveFile("a.gif");
 
 	return 0;
 }
