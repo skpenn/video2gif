@@ -91,6 +91,7 @@ public:
 	IplImage* buf = NULL;
 	IplImage* buf2 = NULL;
 	IplImage* buf3 = NULL;
+	IplImage* ResizeBuf;
 
 	IplImage* InitImg = NULL;
 	IplImage* tmp = NULL;
@@ -102,6 +103,7 @@ public:
 
 	gif(IplImage* img);
 	gif(CvCapture* cap);
+	void Resize(short width, short height);
 	void init();
 	void saveFile(String);
 

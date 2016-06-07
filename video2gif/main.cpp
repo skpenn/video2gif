@@ -26,6 +26,7 @@ int main(int argc, char * argv[]) {
 	if (!cap)return 0;
 	//IplImage* img = readImg("../gaojijian.jpg");
 	gif* g = new gif(cap);
+	g->Resize(1280 * 0.3, 536 * 0.3);
 	g->init();
 	g->saveFile("a.gif");
 
