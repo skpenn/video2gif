@@ -51,7 +51,14 @@ int gif::lzw_encode(IplImage* img) {
 
 	local |= (ne) << label;
 	label += length;
-	while (label >=0) {
+	while (label >=8) {
+		charbuf[size++] = local & 0xff;
+		local >>= 8;
+		label -= 8;
+	}
+	local |= ((1<<IndSize)+1) << label;
+	label += length;
+	while (label > 0) {
 		charbuf[size++] = local & 0xff;
 		local >>= 8;
 		label -= 8;
@@ -94,9 +101,23 @@ void gif::diffBuf(IplImage* old, IplImage* ne) {
 
 IplImage* gif::getNextFrame() {
 	NowTime += RealDelay;
-	while (++count < int(NowTime*CapFps)) {
+	while (++count < int(NowTime*CapFps) && count<frames) {
 		cvQueryFrame(Cap);
 	}
+	if (count >= frames) {
+		return NULL;
+	}
+	float position = float(count) / frames;
+	int i = 0;
+	cout << "|";
+	for (; i < 20 * position; i++) {		
+		cout << char('=');
+	}
+	while (i < 20) {
+		cout << ' ';
+		i++;
+	}
+	cout << "|" << setw(5) << fixed << setprecision(1) << position * 100 << "%" << '\r';
 	return cvQueryFrame(Cap);
 }
 
@@ -135,6 +156,7 @@ gif::gif(CvCapture* cap) {
 	frames = (int)Frames;
 	Cap = cap;
 	IsVideo = true;
+	outFps=CapFps = cvGetCaptureProperty(Cap, CV_CAP_PROP_FPS);
 }
 
 
@@ -152,6 +174,10 @@ void gif::init() {
 	
 	charbuf = new uchar[width*height + ((width*height) >> 1)];
 	octree = new Octree();
+	if (startframe != 0) {
+		cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe);
+		InitImg = cvQueryFrame(Cap);
+	}
 	if (rescale) {
 		cvResize(InitImg, ResizeBuf);
 		octree->init(ResizeBuf);
@@ -159,17 +185,16 @@ void gif::init() {
 	else {
 		octree->init(InitImg);
 	}
-	octree->test();
+	//octree->test();
 	if (IsVideo) {
 		if (frames > 1) {
-			CapFps = cvGetCaptureProperty(Cap, CV_CAP_PROP_FPS);
-			RealDelay = 2 / CapFps;
+			RealDelay = 1 / outFps;
 			NowTime = 0;
-			Graph->delay = (unsigned short)(RealDelay * 100);
+			Graph->delay = (unsigned short)(RealDelay * 100 / speed);
 		}
 		if (!FullQuant) {
 			if (frames > 1) {
-				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, frames - 1);
+				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe + frames - 1);
 				InitImg = cvQueryFrame(Cap);
 				if (rescale) {
 					cvResize(InitImg, ResizeBuf);
@@ -178,10 +203,10 @@ void gif::init() {
 				else {
 					octree->init(InitImg);
 				}
-				octree->test();
+				//octree->test();
 			}
 			if (frames > 2) {
-				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, frames/2);
+				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe + frames / 2);
 				InitImg = cvQueryFrame(Cap);
 				if (rescale) {
 					cvResize(InitImg, ResizeBuf);
@@ -190,21 +215,21 @@ void gif::init() {
 				else {
 					octree->init(InitImg);
 				}
-				octree->test();
+				//octree->test();
 			}
 		}
-		cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, 0);
+		cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe);
 		InitImg = cvQueryFrame(Cap);
 	}
 	octree->reduce();
-	octree->test();
+	//octree->test();
 	octree->addIndex();
 	GlobalTab = octree->getTable();
 	if (GlobalTab->size()<256){
 		cout << "Octree of color quantization generated " <<GlobalTab->size()<<" colors"<< endl;
 	}
 	else {
-		cout << "Failed to generate an octree" << endl;
+		cout << "Error:Failed to generate an octree" << endl;
 		exit(3);
 	}
 	buf = buf2 = buf3 = NULL;
@@ -213,7 +238,7 @@ void gif::init() {
 void gif::saveFile(String filename) {
 	fout = ofstream(filename.c_str(), ios::out | ios::binary);
 	if (fout.is_open() == false) {
-		cout << "Open file failed" << endl;
+		cout << "Error:Open file " << filename << " failed" << endl;
 		exit(4);
 	}
 	buf = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1); 
@@ -265,6 +290,7 @@ void gif::saveFile(String filename) {
 	tch = GIF_TRAILER;
 	fout.write((char*)(&tch), 1);
 	fout.close();
+	cout << "Output file " << filename << " succeed     " << endl;
 }
 
 void gif::Resize(short width, short height) {
@@ -275,6 +301,28 @@ void gif::Resize(short width, short height) {
 	if (height < InitImg->height) {
 		this->height = height;
 		rescale = true;
+	}
+}
+
+void gif::setFps(float fps) {
+	if (IsVideo) {
+		if (fps < CapFps) {
+			outFps = fps;
+		}
+	}
+}
+
+void gif::split(float start, float end) {
+	if (IsVideo&&end>start) {
+		if (start*CapFps < frames) {
+			startframe = start*CapFps;
+			if (end*CapFps < frames) {
+				frames = end*CapFps - startframe;
+			}
+			else {
+				frames -= startframe;
+			}
+		}
 	}
 }
 

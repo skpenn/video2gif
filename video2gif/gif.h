@@ -61,7 +61,7 @@ class gif {
 	float RealDelay;
 	int count = 0;
 	float NowTime = 0;
-	float CapFps;
+	float speed = 1;
 
 	void writeHead();
 	void writeColorTab();
@@ -80,12 +80,13 @@ public:
 	unsigned short width;
 	unsigned short height;
 	bool rescale = false;
-	bool speedup = false;
-	int speed = 1;
 	int frames=1;
+	float startframe = 0;
 	bool IsKeyFrame = false;
 	Octree* octree;
 	bool FullQuant=false;
+	float CapFps = -1;
+	float outFps = -1;
 	uchar* charbuf;
 
 	IplImage* buf = NULL;
@@ -104,6 +105,8 @@ public:
 	gif(IplImage* img);
 	gif(CvCapture* cap);
 	void Resize(short width, short height);
+	void setFps(float fps);
+	void split(float start, float end);
 	void init();
 	void saveFile(String);
 

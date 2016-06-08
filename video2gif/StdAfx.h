@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <iomanip>
 #include <opencv2\opencv.hpp>
 #include <string>
 #include <list>
