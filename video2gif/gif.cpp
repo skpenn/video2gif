@@ -169,13 +169,13 @@ void gif::init() {
 		height = InitImg->height;
 	}
 	else {
-		ResizeBuf = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
+		ResizeBuf = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 3);
 	}
 	
 	charbuf = new uchar[width*height + ((width*height) >> 1)];
-	octree = new MyOctree();
+	octree = new Octree();
 	if (startframe != 0) {
-		cvSetCaptureProperty(Cap, CV_CAP_PROP_POS_FRAMES, startframe);
+		cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe);
 		InitImg = cvQueryFrame(Cap);
 	}
 	if (rescale) {
@@ -194,7 +194,7 @@ void gif::init() {
 		}
 		if (!FullQuant) {
 			if (frames > 1) {
-				cvSetCaptureProperty(Cap, CV_CAP_PROP_POS_FRAMES, startframe + frames - 1);
+				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe + frames - 1);
 				InitImg = cvQueryFrame(Cap);
 				if (rescale) {
 					cvResize(InitImg, ResizeBuf);
@@ -206,7 +206,7 @@ void gif::init() {
 				//octree->test();
 			}
 			if (frames > 2) {
-				cvSetCaptureProperty(Cap, CV_CAP_PROP_POS_FRAMES, startframe + frames / 2);
+				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe + frames / 2);
 				InitImg = cvQueryFrame(Cap);
 				if (rescale) {
 					cvResize(InitImg, ResizeBuf);
@@ -218,7 +218,7 @@ void gif::init() {
 				//octree->test();
 			}
 		}
-		cvSetCaptureProperty(Cap, CV_CAP_PROP_POS_FRAMES, startframe);
+		cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe);
 		InitImg = cvQueryFrame(Cap);
 	}
 	octree->reduce();
@@ -226,7 +226,7 @@ void gif::init() {
 	octree->addIndex();
 	GlobalTab = octree->getTable();
 	if (GlobalTab->size()<256){
-		cout << "MyOctree of color quantization generated " <<GlobalTab->size()<<" colors"<< endl;
+		cout << "Octree of color quantization generated " <<GlobalTab->size()<<" colors"<< endl;
 	}
 	else {
 		cout << "Error:Failed to generate an octree" << endl;
@@ -241,7 +241,7 @@ void gif::saveFile(String filename) {
 		cout << "Error:Open file " << filename << " failed" << endl;
 		exit(4);
 	}
-	buf = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1); 
+	buf = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1); 
 	if (rescale) {
 		cvResize(InitImg, ResizeBuf);
 		octree->qunatizationIndex(ResizeBuf, buf);
@@ -262,7 +262,7 @@ void gif::saveFile(String filename) {
 	writeDate(size);
 	Graph->disp_meth = DSP_RST_PREV;
 	if (frames > 1) {
-		buf2 = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
+		buf2 = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1);
 		while ((InitImg = getNextFrame()) != NULL) {
 			if (rescale) {
 				cvResize(InitImg, ResizeBuf);
@@ -275,8 +275,8 @@ void gif::saveFile(String filename) {
 			if (buf3 != NULL) {
 				cvReleaseImage(&buf3);
 			}
-			buf3 = cvCreateImage(cvSize(im->width, im->height), IPL_DEPTH_8U, 1);
-			cvSetImageROI(buf2, cvRect(im->left, im->top, im->width, im->height));
+			buf3 = cvCreateImage(CvSize(im->width, im->height), IPL_DEPTH_8U, 1);
+			cvSetImageROI(buf2, CvRect(im->left, im->top, im->width, im->height));
 			cvCopy(buf2, buf3, 0);
 			cvResetImageROI(buf2);
 			writeGraphCtrl();

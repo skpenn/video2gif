@@ -31,17 +31,17 @@ bool great_than(Node* a, Node* b) {
 	return !less_than(a, b);
 }
 
-const uchar MyOctree::mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-const uchar MyOctree::mask2[8] = { 0x00, 0x01, 0x02, 0x04, 0x03, 0x05, 0x06, 0x07 };
+const uchar Octree::mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+const uchar Octree::mask2[8] = { 0x00, 0x01, 0x02, 0x04, 0x03, 0x05, 0x06, 0x07 };
 
-MyOctree::MyOctree() {};
-MyOctree::MyOctree(IplImage* img) {
+Octree::Octree() {};
+Octree::Octree(IplImage* img) {
 	init(img);
 	reduce();
 }
 
 //Insert a color to node
-Node* MyOctree::insert(Node* pNode, const Color& c) {
+Node* Octree::insert(Node* pNode, const Color& c) {
 	Node* t;
 	int lev = pNode->level;
 	if (lev < 8) {
@@ -65,7 +65,7 @@ Node* MyOctree::insert(Node* pNode, const Color& c) {
 }
 
 //Sum to get average color
-void MyOctree::sum(Node* p, int& s0, int& s1, int& s2) {
+void Octree::sum(Node* p, int& s0, int& s1, int& s2) {
 	if (p->level == 8) {
 		s0 += p->c.v0*p->freq;
 		s1 += p->c.v1*p->freq;
@@ -82,7 +82,7 @@ void MyOctree::sum(Node* p, int& s0, int& s1, int& s2) {
 }
 
 //reduce node to 256
-void MyOctree::reduce() {
+void Octree::reduce() {
 	int i = 0;
 	for (i = 0; i < 9 && Levels[i].size() <= 256; i++);
 	if (i == 9)return;
@@ -125,7 +125,7 @@ void MyOctree::reduce() {
 	}
 }
 
-void MyOctree::addIndex() {
+void Octree::addIndex() {
 	Levels[leaflevel].sort(great_than);
 	int i = 0;
 	list<Node*>::iterator it=Levels[leaflevel].begin();
@@ -134,8 +134,8 @@ void MyOctree::addIndex() {
 	}
 }
 
-//Generate MyOctree from a image
-void MyOctree::init(IplImage* img) {
+//Generate Octree from a image
+void Octree::init(IplImage* img) {
 	int lev = 0;
 	InitImg = img;
 	Node* root;
@@ -148,7 +148,7 @@ void MyOctree::init(IplImage* img) {
 		root = *Levels[0].begin();
 	}
 
-	//Generate MyOctree
+	//Generate Octree
 	for (int i = 0; i < img->height; i++) {
 		for (int j = 0; j < img->width; j++) {
 			uchar* pt = (uchar*)(img->imageData + i*img->widthStep + j*img->nChannels);
@@ -161,7 +161,7 @@ void MyOctree::init(IplImage* img) {
 	}
 }
 
-Node* MyOctree::find(const Color& c) {
+Node* Octree::find(const Color& c) {
 	Node* p = *Levels[0].begin();
 	int lev = 0;
 	for (; lev < leaflevel; lev++) {
@@ -177,7 +177,7 @@ Node* MyOctree::find(const Color& c) {
 	return p;
 }
 
-void MyOctree::qunatization(IplImage* src, IplImage* dst) {
+void Octree::qunatization(IplImage* src, IplImage* dst) {
 	for (int i = 0; i < src->height; i++) {
 		for (int j = 0; j < src->width; j++) {
 			uchar* pt = (uchar*)(src->imageData + i*src->widthStep + j*src->nChannels);
@@ -192,7 +192,7 @@ void MyOctree::qunatization(IplImage* src, IplImage* dst) {
 	}
 }
 
-void MyOctree::qunatizationIndex(IplImage* src, IplImage* dst) {
+void Octree::qunatizationIndex(IplImage* src, IplImage* dst) {
 	for (int i = 0; i < src->height; i++) {
 		for (int j = 0; j < src->width; j++) {
 			uchar* pt = (uchar*)(src->imageData + i*src->widthStep + j*src->nChannels);
@@ -205,18 +205,18 @@ void MyOctree::qunatizationIndex(IplImage* src, IplImage* dst) {
 	}
 }
 
-list<Node*>* MyOctree::getTable() {
+list<Node*>* Octree::getTable() {
 	return Levels + leaflevel;
 }
 
-void MyOctree::test() {
+void Octree::test() {
 	for (int i = 0; i < 9; i++) {
 		cout << "level" << i << ": " << Levels[i].size() << endl;
 	}
 
 }
 
-MyOctree::~MyOctree() {
+Octree::~Octree() {
 	for (int i = 0; i < 9; i++) {
 		for (list<Node*>::iterator it = Levels[i].begin(); it != Levels[i].end(); it++) {
 			delete *it;
