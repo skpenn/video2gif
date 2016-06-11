@@ -35,7 +35,7 @@ public:
 	friend bool great_than(Node* a, Node* b);
 };
 
-class Octree {
+class MyOctree {
 	IplImage* InitImg;
 	static const uchar mask[8];
 	static const uchar mask2[8];
@@ -44,8 +44,8 @@ class Octree {
 	Node* insert(Node* pNode, const Color& c);
 	void sum(Node* p, int& s0, int& s1, int& s2);
 public:
-	Octree();
-	Octree(IplImage* InitImg);
+	MyOctree();
+	MyOctree(IplImage* InitImg);
 	void init(IplImage* InitImg);
 	void reduce();
 	void addIndex();
@@ -55,5 +55,5 @@ public:
 	list<Node*>* getTable();
 	void test();
 
-	~Octree();
+	~MyOctree();
 };

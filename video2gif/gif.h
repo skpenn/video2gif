@@ -83,7 +83,7 @@ public:
 	int frames=1;
 	float startframe = 0;
 	bool IsKeyFrame = false;
-	Octree* octree;
+	MyOctree* octree;
 	bool FullQuant=false;
 	float CapFps = -1;
 	float outFps = -1;
