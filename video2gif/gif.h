@@ -34,10 +34,10 @@ public:
 	unsigned short top;
 	unsigned short width;
 	unsigned short height;
-	bool localcolor;
-	bool interlace;
-	bool sorted;
-	uchar size;
+	bool localcolor=false;
+	bool interlace=false;
+	bool sorted=false;
+	uchar size=0;
 };
 
 class Graph_ctrl {
@@ -71,12 +71,14 @@ class gif {
 	void diffBuf(IplImage* old, IplImage* ne);
 	void writeDate(int size);
 	IplImage* getNextFrame();
+	void saveLocal();
 
 	void display(IplImage* img);
 public:
 	unsigned int IndSize = 8;
 	bool version=GIF_89A;
 	bool IsVideo=false;
+	bool Local = false;
 	unsigned short width;
 	unsigned short height;
 	bool rescale = false;

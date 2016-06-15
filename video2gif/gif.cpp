@@ -192,7 +192,7 @@ void gif::init() {
 			NowTime = 0;
 			Graph->delay = (unsigned short)(RealDelay * 100 / speed);
 		}
-		if (!FullQuant) {
+		if (!FullQuant && !Local) {
 			if (frames > 1) {
 				cvSetCaptureProperty(Cap, CAP_PROP_POS_FRAMES, startframe + frames - 1);
 				InitImg = cvQueryFrame(Cap);
@@ -262,35 +262,75 @@ void gif::saveFile(String filename) {
 	writeDate(size);
 	Graph->disp_meth = DSP_RST_PREV;
 	if (frames > 1) {
-		buf2 = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1);
-		while ((InitImg = getNextFrame()) != NULL) {
-			if (rescale) {
-				cvResize(InitImg, ResizeBuf);
-				octree->qunatizationIndex(ResizeBuf, buf2);
+		if (!Local) {
+			buf2 = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1);
+			while ((InitImg = getNextFrame()) != NULL) {
+				if (rescale) {
+					cvResize(InitImg, ResizeBuf);
+					octree->qunatizationIndex(ResizeBuf, buf2);
+				}
+				else {
+					octree->qunatizationIndex(InitImg, buf2);
+				}
+				diffBuf(buf, buf2);
+				if (buf3 != NULL) {
+					cvReleaseImage(&buf3);
+				}
+				buf3 = cvCreateImage(CvSize(im->width, im->height), IPL_DEPTH_8U, 1);
+				cvSetImageROI(buf2, CvRect(im->left, im->top, im->width, im->height));
+				cvCopy(buf2, buf3, 0);
+				cvResetImageROI(buf2);
+				writeGraphCtrl();
+				writeImgDesp();
+				size = lzw_encode(buf3);
+				tch = IndSize;
+				fout.write((char*)(&tch), 1);
+				writeDate(size);
 			}
-			else {
-				octree->qunatizationIndex(InitImg, buf2);
-			}
-			diffBuf(buf, buf2);
-			if (buf3 != NULL) {
-				cvReleaseImage(&buf3);
-			}
-			buf3 = cvCreateImage(CvSize(im->width, im->height), IPL_DEPTH_8U, 1);
-			cvSetImageROI(buf2, CvRect(im->left, im->top, im->width, im->height));
-			cvCopy(buf2, buf3, 0);
-			cvResetImageROI(buf2);
-			writeGraphCtrl();
-			writeImgDesp();
-			size = lzw_encode(buf3);
-			tch = IndSize;
-			fout.write((char*)(&tch), 1);
-			writeDate(size);
+		}
+		else {
+			saveLocal();
 		}
 	}
 	tch = GIF_TRAILER;
 	fout.write((char*)(&tch), 1);
 	fout.close();
 	cout << "Output file " << filename << " succeed     " << endl;
+}
+
+void gif::saveLocal() {
+	buf2 = cvCreateImage(CvSize(width, height), IPL_DEPTH_8U, 1);
+	im->localcolor = true;
+	im->sorted = true;
+	im->size = 7;
+	int size = 0;
+	while ((InitImg = getNextFrame()) != NULL) {
+		if (octree != NULL)delete octree;
+		octree = new Octree;
+		if (rescale) {
+			cvResize(InitImg, ResizeBuf);
+			octree->init(ResizeBuf);
+			octree->reduce();
+			octree->addIndex();
+			GlobalTab = octree->getTable();
+			octree->qunatizationIndex(ResizeBuf, buf2);
+		}
+
+		else {
+			octree->init(InitImg);
+			octree->reduce();
+			octree->addIndex();
+			GlobalTab = octree->getTable();
+			octree->qunatizationIndex(InitImg, buf2);
+		}
+		writeGraphCtrl();
+		writeImgDesp();
+		writeColorTab();
+		size = lzw_encode(buf2);
+		tch = IndSize;
+		fout.write((char*)(&tch), 1);
+		writeDate(size);
+	}
 }
 
 void gif::Resize(short width, short height) {
@@ -366,7 +406,7 @@ void gif::writeImgDesp() {
 	fout.write((char*)&im->top, 2);
 	fout.write((char*)&im->width, 2);
 	fout.write((char*)&im->height, 2);
-	tch = 0x0;
+	tch = (im->localcolor<<7)|(im->interlace<<6)|(im->sorted<<5)|(im->size);
 	fout.write((char*)&tch, 1);
 }
 

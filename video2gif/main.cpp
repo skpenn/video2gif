@@ -20,6 +20,7 @@ IplImage* readImg(String filename) {
 int main(int argc, char * argv[]) {
 	String inputfile = "", outputfile = "", filetype="";
 	float speed = 0, starttime=0, endtime=0, resize=0, fps=0;
+	bool Local = false;
 	int count = 0;
 	if (argc <= 1) {
 		cout << "USAGE: video2gif filename  [-options] [param]                            " << endl;
@@ -40,6 +41,8 @@ int main(int argc, char * argv[]) {
 		cout << "                  you should provide 2 time points with their units  se- " << endl;
 		cout << "                  cond, connected by symbol `-`. Time point can have de- " << endl;
 		cout << "                  cimals. For example, `30.1-32.5`                       " << endl;
+		cout << "-l                use local color table instead of global color table,   " << endl;
+		cout << "                  this will cause your GIF file larger                   " << endl;
 		return 0;
 	}
 	else {
@@ -130,6 +133,9 @@ int main(int argc, char * argv[]) {
 					}
 				
 				}
+				else if (str == "-l") {
+					Local = true;
+				}
 				else {
 					cout << "Error:Unknown command " << str << endl;
 					return 0;
@@ -175,6 +181,7 @@ int main(int argc, char * argv[]) {
 		if (endtime != 0) {
 			g->split(starttime, endtime);
 		}
+		g->Local = Local;
 		g->init();
 		g->saveFile(outputfile);
 
