@@ -20,7 +20,7 @@ IplImage* readImg(String filename) {
 int main(int argc, char * argv[]) {
 	String inputfile = "", outputfile = "", filetype="";
 	float speed = 0, starttime=0, endtime=0, resize=0, fps=0;
-	bool Local = false;
+	bool Local = false, keyfram=false;
 	int count = 0;
 	if (argc <= 1) {
 		cout << "USAGE: video2gif filename  [-options] [param]                            " << endl;
@@ -43,6 +43,9 @@ int main(int argc, char * argv[]) {
 		cout << "                  cimals. For example, `30.1-32.5`                       " << endl;
 		cout << "-l                use local color table instead of global color table,   " << endl;
 		cout << "                  this will cause your GIF file larger                   " << endl;
+		cout << "-k                use firest frame as key frame, all other frame will ba-" << endl;
+		cout << "                  se on this frame. This will reduce the size of your    " << endl;
+		cout << "                  image under some special condition.                    " << endl;
 		return 0;
 	}
 	else {
@@ -136,6 +139,9 @@ int main(int argc, char * argv[]) {
 				else if (str == "-l") {
 					Local = true;
 				}
+				else if (str == "-k") {
+					keyfram = true;
+				}
 				else {
 					cout << "Error:Unknown command " << str << endl;
 					return 0;
@@ -182,6 +188,7 @@ int main(int argc, char * argv[]) {
 			g->split(starttime, endtime);
 		}
 		g->Local = Local;
+		g->IsKeyFrame = keyfram;
 		g->init();
 		g->saveFile(outputfile);
 
