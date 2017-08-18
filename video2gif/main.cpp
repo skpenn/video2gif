@@ -215,7 +215,7 @@ int main(int argc, char * argv[]) {
 		if (fps != 0) {
 			g->setFps(fps);
 		}
-		if (endtime != 0) {
+		if (endtime > 0) {
 			g->split(starttime, endtime);
 		}
 		g->Local = Local;
@@ -223,7 +223,7 @@ int main(int argc, char * argv[]) {
 		g->speed = speed;
 		g->init();
 		g->saveFile(outputfile);
-
+		delete g;
 	}
 	else if (filetype == ".jpg" || filetype == ".bmp") {
 		IplImage* img = readImg(inputfile);
@@ -236,10 +236,10 @@ int main(int argc, char * argv[]) {
 		}
 		g->init();
 		g->saveFile(outputfile);
+		delete g;
 	}
 	else {
 		cout << "Error:Unsupported file format" << endl;
 	}
-
 	return 0;
 }

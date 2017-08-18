@@ -449,4 +449,6 @@ gif::~gif() {
 	delete Graph;
 	delete[] charbuf;
 	delete octree;
+
+	cvReleaseCapture(&Cap);
 }
