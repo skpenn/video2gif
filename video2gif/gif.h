@@ -61,7 +61,6 @@ class gif {
 	float RealDelay;
 	int count = 0;
 	float NowTime = 0;
-	float speed = 1;
 
 	void writeHead();
 	void writeColorTab();
@@ -82,7 +81,8 @@ public:
 	unsigned short width;
 	unsigned short height;
 	bool rescale = false;
-	int frames=1;
+	int frames = 1;
+	float speed = 1;
 	float startframe = 0;
 	bool IsKeyFrame = false;
 	Octree* octree;

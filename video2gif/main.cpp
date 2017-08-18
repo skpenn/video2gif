@@ -17,9 +17,40 @@ IplImage* readImg(String filename) {
 	return img;
 }
 
+float timeFormatter(String time) {
+	float seconds = 0;
+	int minutes = 0, hours = 0;
+	size_t index = time.find_last_of(':');
+	if (index == std::string::npos){
+		seconds =  atof(time.c_str());
+		if (seconds == 0 && time[0] != '0') return -1;
+	}
+	else{
+		String strSeconds = time.substr(index + 1); 
+		seconds = atof(strSeconds.c_str());
+		if (seconds == 0 && strSeconds[0] != '0') return -1;
+		time = time.substr(0, index);
+		index = time.find_last_of(':');
+		if (index == std::string::npos){
+			minutes = atoi(time.c_str());
+			if (minutes == 0 && time[0] != '0') return -1;
+		}
+		else{
+			String strMinutes = time.substr(index + 1);
+			minutes = atoi(strMinutes.c_str());
+			if (minutes == 0 && strMinutes[0] != '0') return -1;
+			time = time.substr(0, index);
+			hours = atoi(time.c_str());
+			if (hours == 0 && time[0] != '0') return -1;
+		}
+	}
+	return ((hours * 60) + minutes) * 60 + seconds;
+
+}
+
 int main(int argc, char * argv[]) {
 	String inputfile = "", outputfile = "", filetype="";
-	float speed = 0, starttime=0, endtime=0, resize=0, fps=0;
+	float speed = 1, starttime=0, endtime=0, resize=0, fps=0;
 	bool Local = false, keyfram=false;
 	int count = 0;
 	if (argc <= 1) {
@@ -119,13 +150,13 @@ int main(int argc, char * argv[]) {
 						}
 						String tmp1 = tmp.substr(0, t);
 						String tmp2 = tmp.substr(t + 1);
-						starttime = atof(tmp1.c_str());
-						if (starttime == 0&&tmp1!="0") {
+						starttime = timeFormatter(tmp1);
+						if (starttime == -1) {
 							cout << "Error:Illegal parameter of -c" << endl;
 							return 0;
 						}
-						endtime = atof(tmp2.c_str());
-						if (endtime == 0) {
+						endtime = timeFormatter(tmp2);
+						if (endtime == -1) {
 							cout << "Error:Illegal parameter of -c" << endl;
 							return 0;
 						}
@@ -189,6 +220,7 @@ int main(int argc, char * argv[]) {
 		}
 		g->Local = Local;
 		g->IsKeyFrame = keyfram;
+		g->speed = speed;
 		g->init();
 		g->saveFile(outputfile);
 
