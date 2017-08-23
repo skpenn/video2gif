@@ -450,5 +450,6 @@ gif::~gif() {
 	delete[] charbuf;
 	delete octree;
 
-	cvReleaseCapture(&Cap);
+	if (Cap!=NULL)cvReleaseCapture(&Cap);
+	if (InitImg != NULL)cvReleaseImage(&InitImg);
 }

@@ -99,7 +99,7 @@ public:
 	IplImage* InitImg = NULL;
 	IplImage* tmp = NULL;
 	list<Node*>* GlobalTab;
-	CvCapture* Cap;
+	CvCapture* Cap = NULL;
 
 	Image_info* im;
 	Graph_ctrl* Graph;

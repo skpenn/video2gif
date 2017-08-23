@@ -60,20 +60,21 @@ int main(int argc, char * argv[]) {
 		cout << "`.rmvb`, `.mkv`(partial). Supported image format include `.jpg`, `.bmp`. " << endl;
 		cout << "Options:"                                                                  << endl;
 		cout << "-o [Filename]     Output filename. If not given, original input file name" << endl;
-		cout << "                  will be used as output filename                        " << endl;
+		cout << "                  will be used as output filename.                       " << endl;
 		cout << "-r [Size Ratio]   Rescale the image size. Only shrink is supported so the" << endl;
-		cout << "                  given size ratio should be less than 1                 " << endl;
+		cout << "                  given size ratio should be less than 1.                " << endl;
 		cout << "-f [FPS]          Setting FPS. Given FPS should not be great than the    " << endl;
-		cout << "                  original one                                           " << endl;
+		cout << "                  original one.                                          " << endl;
 		cout << "-s [Speed Ratio]  Change playing speed. Can speed up or slow down your   " << endl;
 		cout << "                  output gif. Notice that this will change your FPS set- " << endl;
-		cout << "                  ting, the real FPS is Speed Ratio multiple set FPS     " << endl;
-		cout << "-c [start-end]    Give a cut range and convert only the cut range to GIF." << endl;
-		cout << "                  you should provide 2 time points with their units  se- " << endl;
-		cout << "                  cond, connected by symbol `-`. Time point can have de- " << endl;
-		cout << "                  cimals. For example, `30.1-32.5`                       " << endl;
+		cout << "                  ting, the real FPS is the Speed Ratio multiple set FPS." << endl;
+		cout << "-c [start-end]    Give a cut range of time and convert only the video in " << endl;
+		cout << "                  range to a GIF. you should provide 2 time points, con- " << endl;
+		cout << "                  nected by the symbol `-`. A Time point is in format of " << endl;
+		cout << "                  `hh:mm:ss.MMM` where hours and minutes are not necessa-" << endl;
+		cout << "                  ry. For example, `1:02:00.5-3721.5`.                   " << endl;
 		cout << "-l                use local color table instead of global color table,   " << endl;
-		cout << "                  this will cause your GIF file larger                   " << endl;
+		cout << "                  this will cause your GIF file larger.                  " << endl;
 		cout << "-k                use firest frame as key frame, all other frame will ba-" << endl;
 		cout << "                  se on this frame. This will reduce the size of your    " << endl;
 		cout << "                  image under some special condition.                    " << endl;
@@ -241,5 +242,7 @@ int main(int argc, char * argv[]) {
 	else {
 		cout << "Error:Unsupported file format" << endl;
 	}
+	string te;
+	cin >> te;
 	return 0;
 }
